@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Оцените нас — МИДиС</title>
+<script>
+  const CONFIG = {
+    businessName: "МИДиС",                // Название заведения/учреждения
+    businessInitial: "М",                  // Буква для бейджа
+    yandexReviewUrl: "https://yandex.ru/maps/-/CDtXXXXX", // Ссылка "оставить отзыв" на карточке в Яндекс.Картах
+    webhookUrl: "PASTE_APPS_SCRIPT_URL_HERE", // URL из Google Apps Script
+    clientId: "midis-demo"
+  };
+</script>
+</head>
+<body>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap');
+
+  :root{
+    --bg:#F7F6F4;
+    --surface:#FFFFFF;
+    --surface-dark:#2A2A2A;
+    --ink:#171717;
+    --ink-muted:#6B6B6B;
+    --orange:#F16522;
+    --orange-deep:#FC4C00;
+    --line:#E7E4DF;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Manrope', 'Segoe UI', system-ui, sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100%;
+    padding:24px;
+  }
+
+  .card{
+    width:100%;
+    max-width:400px;
+    background:var(--surface);
+    border-radius:24px;
+    padding:36px 28px 30px;
+    text-align:center;
+    position:relative;
+    box-shadow:0 24px 60px -24px rgba(23,23,23,0.18);
+  }
+
+  .logo{
+    width:120px;
+    height:auto;
+    margin:0 auto 22px;
+    display:block;
+    transform:translateY(-8px);
+    opacity:0;
+    animation:logo-in 0.45s cubic-bezier(.2,.9,.25,1) 0.1s forwards;
+  }
+  @media (prefers-reduced-motion: reduce){ .logo{ animation-duration:0.01s; } }
+  @keyframes logo-in{
+    0%{ transform:translateY(-8px); opacity:0; }
+    100%{ transform:translateY(0); opacity:1; }
+  }
+
+  h1{
+    font-weight:800;
+    font-size:22px;
+    line-height:1.25;
+    margin:0 0 6px;
+    letter-spacing:-0.2px;
+  }
+  h1 span{ color:var(--orange); }
+  .sub{
+    color:var(--ink-muted);
+    font-size:14px;
+    font-weight:500;
+    margin:0 0 26px;
+  }
+
+  .stars{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .star-btn{
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    border:1.5px solid var(--line);
+    background:var(--surface);
+    color:#C9C4BC;
+    font-size:20px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform 0.15s ease, border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .star-btn:hover{ transform:translateY(-2px); border-color:var(--orange); }
+  .star-btn:focus-visible{ outline:2px solid var(--orange); outline-offset:3px; }
+  .star-btn.active{
+    border-color:var(--orange);
+    color:var(--orange);
+    background:#FFF1E8;
+  }
+  .scale-labels{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    font-weight:600;
+    color:var(--ink-muted);
+    padding:0 2px;
+    margin-top:4px;
+  }
+
+  .panel{ margin-top:24px; }
+  textarea{
+    width:100%;
+    min-height:90px;
+    resize:vertical;
+    background:var(--bg);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+    padding:12px 14px;
+  }
+  textarea:focus-visible{ outline:2px solid var(--orange); outline-offset:2px; }
+
+  .btn-primary{
+    margin-top:14px;
+    width:100%;
+    background:var(--orange-deep);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:14px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .btn-primary:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+
+  .hidden{ display:none; }
+
+  .result{ padding:6px 0; }
+  .result-icon{
+    display:inline-block;
+    font-weight:800;
+    font-size:15px;
+    color:#fff;
+    background:var(--orange);
+    padding:6px 16px;
+    border-radius:999px;
+  }
+  .result p{ color:var(--ink-muted); font-size:14px; margin-top:12px; font-weight:500; }
+
+  .footnote{
+    margin-top:26px;
+    font-size:11px;
+    font-weight:600;
+    color:#A8A29A;
+  }
+</style>
+
+<div class="card">
+  <svg class="logo" viewBox="0 0 161 33" xmlns="http://www.w3.org/2000/svg" fill="none" role="img" aria-label="МИДиС"><g fill="#FC4C00"><path d="M15.455 20.264 1.947.003h6.087l7.42 11.089L22.876.002h7.254v28.391h-5.42V6.34l-9.254 13.925Zm-9.342 8.171H.693v-6.337l5.42-8.145v14.482Zm31.352 0V.003h5.42v21.095L56.892.003h6.337v28.432h-5.253V7.68L44.052 28.435h-6.587Zm66.609 0V.003h5.42v21.095L123.502.003h6.336v28.432h-5.253V7.849L110.83 28.435h-6.756ZM147.856.003c7.739-.123 11.568 4.254 12.838 6.67l-4.198 2.28c-2.064-4.16-6.306-4.777-8.64-4.65-3.399.183-8.927 2.669-8.927 10.073 0 7.403 6.088 9.473 9.132 9.582 4.881 0 7.631-2.932 8.41-4.53l4.223 2.382c-3.473 5.831-9.275 6.57-12.633 6.57-10.115 0-14.25-8.435-14.25-14.004 0-8.804 6.388-14.373 14.045-14.373Z"/><path fill-rule="evenodd" d="M72.734 32.52v-4.202h21.803v4.16h5.461v-8.62h-4.585V.003H74.067c-.041 21.053-3.21 23.855-4.085 23.855h-2.751v8.662h5.503ZM90.077 4.422H79.153c-.25 13.174-2.418 18.769-3.335 19.436h14.257V4.422Z" clip-rule="evenodd"/></g></svg>
+  <h1 id="title"></h1>
+  <p class="sub">Поделитесь впечатлением о визите — это займёт 5 секунд</p>
+
+  <div id="ratingPanel">
+    <div class="stars" id="stars"></div>
+    <div class="scale-labels"><span>Не понравилось</span><span>Отлично</span></div>
+  </div>
+
+  <div id="feedbackPanel" class="panel hidden">
+    <textarea id="feedbackText" placeholder="Что можно улучшить? Это увидит приёмная комиссия."></textarea>
+    <button class="btn-primary" id="sendFeedback">Отправить</button>
+  </div>
+
+  <div id="resultPanel" class="panel hidden result">
+    <div class="result-icon" id="resultTitle"></div>
+    <p id="resultText"></p>
+  </div>
+
+  <div class="footnote">Оценка передаётся напрямую администрации МИДиС</div>
+</div>
+
+<script>
+  document.getElementById('title').innerHTML = 'Как вам у нас <span>сегодня</span>?';
+
+  const starsEl = document.getElementById('stars');
+  let chosen = null;
+
+  for(let i=1;i<=5;i++){
+    const b = document.createElement('button');
+    b.className = 'star-btn';
+    b.textContent = '★';
+    b.setAttribute('aria-label', i + ' из 5');
+    b.addEventListener('click', () => selectRating(i, b));
+    starsEl.appendChild(b);
+  }
+
+  function selectRating(value, btnEl){
+    chosen = value;
+    [...starsEl.children].forEach((el, idx) => {
+      el.classList.toggle('active', idx < value);
+    });
+
+    logEvent({ rating: value, feedback: '' });
+
+    setTimeout(() => {
+      if(value >= 4){
+        showResult(
+          'Спасибо!',
+          'Переносим вас на Яндекс.Карты — отзыв поможет будущим абитуриентам найти нас.'
+        );
+        setTimeout(() => { window.location.href = CONFIG.yandexReviewUrl; }, 1400);
+      } else {
+        document.getElementById('ratingPanel').classList.add('hidden');
+        document.getElementById('feedbackPanel').classList.remove('hidden');
+      }
+    }, 250);
+  }
+
+  document.getElementById('sendFeedback').addEventListener('click', () => {
+    const text = document.getElementById('feedbackText').value.trim();
+    logEvent({ rating: chosen, feedback: text });
+    document.getElementById('feedbackPanel').classList.add('hidden');
+    showResult('Принято', 'Спасибо за честность — мы разберём это уже сегодня.');
+  });
+
+  function showResult(title, text){
+    document.getElementById('ratingPanel').classList.add('hidden');
+    document.getElementById('resultTitle').textContent = title;
+    document.getElementById('resultText').textContent = text;
+    document.getElementById('resultPanel').classList.remove('hidden');
+  }
+
+  function logEvent(data){
+    if(!CONFIG.webhookUrl || CONFIG.webhookUrl.startsWith('PASTE_')) return;
+    // Анонимно: оценка, текст жалобы (если есть) и время — без идентификаторов пользователя
+    const payload = {
+      clientId: CONFIG.clientId,
+      businessName: CONFIG.businessName,
+      rating: data.rating,
+      feedback: data.feedback,
+      timestamp: new Date().toISOString()
+    };
+    fetch(CONFIG.webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
+  }
+</script>
+
+</body>
+</html>
